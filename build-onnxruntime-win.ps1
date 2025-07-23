@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS build onnxruntime for windows by benjaminwan
 .DESCRIPTION
 This is a powershell script for builid onnxruntime in windows.
@@ -79,9 +79,9 @@ function CheckLibexeExists
 
 function GetLibsList
 {
-    $InFile = "onnxruntime.dir\Release\onnxruntime.tlog\link.read.1.tlog"
+    $InFile = "onnxruntime.dir\$BuildType\onnxruntime.tlog\link.read.1.tlog"
     $OutFile = "install-static\libs_list.txt"
-    $LikeLine = "RELEASE\*.LIB"
+    $LikeLine = "$BuildType\*.LIB"
 
     $data = Get-Content $InFile | ForEach-Object { $_.split(" ") }
     $data | Out-File $OutFile
@@ -146,7 +146,7 @@ function CollectLibs
     }
 
     # 复制 onnxruntime.dir\Release\onnxruntime.tlog\link.read.1.tlog 文件到 install-static\link.log
-    Copy-Item -Path "onnxruntime.dir\Release\onnxruntime.tlog\link.read.1.tlog" -Destination "install-static\link.log"
+    Copy-Item -Path "onnxruntime.dir\$BuildType\onnxruntime.tlog\link.read.1.tlog" -Destination "install-static\link.log"
 
     # 创建 install-static\OnnxRuntimeConfig.cmake 文件，并写入相关内容
     Set-Content -Path "install-static\OnnxRuntimeConfig.cmake" -Value "set(OnnxRuntime_INCLUDE_DIRS `${CMAKE_CURRENT_LIST_DIR}/include`)"
@@ -244,7 +244,7 @@ python $PSScriptRoot\tools\ci_build\build.py `
 	--compile_no_warning_as_error `
 	--cmake_generator $VsFlag `
 	$StaticCrtFlag `
-	--cmake_extra_defines CMAKE_INSTALL_PREFIX=./install onnxruntime_BUILD_UNIT_TESTS=OFF
+	--cmake_extra_defines CMAKE_INSTALL_PREFIX=./install onnxruntime_BUILD_UNIT_TESTS=OFF USE_OPENMP=OFF
 
 if (!(Test-Path -Path $OutPutPath\$BuildType\$BuildType))
 {
@@ -257,7 +257,7 @@ Push-Location "build-$VsArch-$VsVer-$VsCRT\$BuildType"
 #$LogicalProcessorsNum=(Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
 #cmake --build . --config $BuildType --parallel $LogicalProcessorsNum
 
-cmake --install .
+cmake --install . --config $BuildType
 if (!(Test-Path -Path install))
 {
     Write-Host "Cmake install error!"
